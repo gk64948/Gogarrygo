@@ -1,0 +1,40 @@
+# WordPress Core
+/wp-admin/
+/wp-includes/
+
+# WordPress Root Files
+index.php
+license.txt
+readme.html
+xmlrpc.php
+wp-*.php
+
+# Config file (VERY IMPORTANT)
+wp-config.php
+
+# Uploads (optional - agar heavy data nahi chahiye)
+wp-content/uploads/*
+
+# Cache & Logs
+*.log
+error_log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Node (agar use kar rahe ho)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Env files
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Backup files
+*.zip
+*.tar.gz
