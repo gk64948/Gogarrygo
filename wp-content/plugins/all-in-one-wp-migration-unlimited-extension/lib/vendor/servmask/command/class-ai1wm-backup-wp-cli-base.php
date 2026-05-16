@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2023 ServMask Inc.
+ * Copyright (C) 2014-2025 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Attribution: This code is part of the All-in-One WP Migration plugin, developed by
  *
  * ███████╗███████╗██████╗ ██╗   ██╗███╗   ███╗ █████╗ ███████╗██╗  ██╗
  * ██╔════╝██╔════╝██╔══██╗██║   ██║████╗ ████║██╔══██╗██╔════╝██║ ██╔╝
@@ -88,20 +90,33 @@ if ( defined( 'WP_CLI' ) && ! class_exists( 'Ai1wm_Backup_WP_CLI_Base' ) ) {
 			);
 
 			if ( isset( $assoc_args['password'] ) ) {
-				if ( function_exists( 'ai1wm_can_encrypt' ) && ai1wm_can_encrypt() ) {
-					if ( $assoc_args['password'] === true || empty( $assoc_args['password'] ) ) {
-						$assoc_args['password'] = readline( 'Please enter a password to protect this backup: ' );
-					}
-
-					if ( empty( $assoc_args['password'] ) ) {
-						WP_CLI::error( __( 'Encryption password must not be empty.', AI1WM_PLUGIN_NAME ) );
-					}
-
-					$params['options']['encrypt_backups']  = true;
-					$params['options']['encrypt_password'] = $assoc_args['password'];
-				} else {
+				if ( ! ai1wm_can_encrypt() ) {
 					WP_CLI::error( __( 'Your system doesn\'t support encryption.', AI1WM_PLUGIN_NAME ) );
 				}
+
+				if ( is_bool( $assoc_args['password'] ) || empty( $assoc_args['password'] ) ) {
+					$assoc_args['password'] = readline( 'Please enter a password to protect this backup: ' );
+				}
+
+				if ( empty( $assoc_args['password'] ) ) {
+					WP_CLI::error( __( 'Encryption password must not be empty.', AI1WM_PLUGIN_NAME ) );
+				}
+
+				$params['options']['encrypt_backups']  = true;
+				$params['options']['encrypt_password'] = $assoc_args['password'];
+			}
+
+			if ( isset( $assoc_args['compression'] ) ) {
+				if ( is_bool( $assoc_args['compression'] ) || empty( $assoc_args['compression'] ) ) {
+					$assoc_args['compression'] = readline( 'Please enter a compression type to archive this backup (gzip or bzip2): ' );
+				}
+
+				if ( ! ai1wm_has_compression_type( $assoc_args['compression'] ) ) {
+					WP_CLI::error( sprintf( __( 'Your system doesn\'t support %s compression.', AI1WM_PLUGIN_NAME ), $assoc_args['compression'] ) );
+					exit;
+				}
+
+				$params['options']['compression_type'] = strtolower( $assoc_args['compression'] );
 			}
 
 			if ( isset( $assoc_args['exclude-spam-comments'] ) ) {
@@ -145,7 +160,7 @@ if ( defined( 'WP_CLI' ) && ! class_exists( 'Ai1wm_Backup_WP_CLI_Base' ) ) {
 			} else {
 				// Exclude some of the tables
 				if ( isset( $assoc_args['exclude-tables'] ) ) {
-					$mysql = Ai1wm_Database_Utility::create_client();
+					$mysql = Ai1wm_Database_Utility::get_client();
 
 					// Include table prefixes
 					if ( ai1wm_table_prefix() ) {
@@ -159,7 +174,7 @@ if ( defined( 'WP_CLI' ) && ! class_exists( 'Ai1wm_Backup_WP_CLI_Base' ) ) {
 					$all_tables = $mysql->get_tables();
 
 					if ( $assoc_args['exclude-tables'] === true || empty( $assoc_args['exclude-tables'] ) ) {
-						$tables = new cli\Table;
+						$tables = new cli\Table();
 
 						$tables->setHeaders(
 							array(
@@ -206,7 +221,7 @@ if ( defined( 'WP_CLI' ) && ! class_exists( 'Ai1wm_Backup_WP_CLI_Base' ) ) {
 
 				// Include additional tables
 				if ( isset( $assoc_args['include-tables'] ) ) {
-					$mysql = Ai1wm_Database_Utility::create_client();
+					$mysql = Ai1wm_Database_Utility::get_client();
 
 					// Include table prefixes
 					if ( ai1wm_table_prefix() ) {
@@ -216,7 +231,7 @@ if ( defined( 'WP_CLI' ) && ! class_exists( 'Ai1wm_Backup_WP_CLI_Base' ) ) {
 					}
 
 					if ( $assoc_args['include-tables'] === true || empty( $assoc_args['include-tables'] ) ) {
-						$tables = new cli\Table;
+						$tables = new cli\Table();
 
 						$tables->setHeaders(
 							array(

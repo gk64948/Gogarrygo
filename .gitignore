@@ -38,3 +38,5 @@ yarn.lock
 # Backup files
 *.zip
 *.tar.gz
+*.wpress
+wp-content/plugins/all-in-one-wp-migration/storage/*

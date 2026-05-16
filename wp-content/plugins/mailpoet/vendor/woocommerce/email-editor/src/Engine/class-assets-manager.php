@@ -52,23 +52,6 @@ class Assets_Manager {
  $post_id = $edited_item instanceof \WP_Post ? $edited_item->ID : $edited_item->id;
  $email_editor_assets_path = rtrim( $this->assets_path, '/' ) . '/';
  $email_editor_assets_url = rtrim( $this->assets_url, '/' ) . '/';
- // Email editor rich text JS - Because the Personalization Tags depend on Gutenberg 19.8.0 and higher
- // the following code replaces used Rich Text for the version containing the necessary changes.
- $rich_text_assets_file = $email_editor_assets_path . 'assets/rich-text.asset.php';
- if ( ! file_exists( $rich_text_assets_file ) ) {
- $this->logger->error( 'Rich Text assets file does not exist.', array( 'path' => $rich_text_assets_file ) );
- } else {
- $rich_text_assets = require $rich_text_assets_file;
- wp_deregister_script( 'wp-rich-text' );
- wp_enqueue_script(
- 'wp-rich-text',
- $email_editor_assets_url . 'assets/rich-text.js',
- $rich_text_assets['dependencies'],
- $rich_text_assets['version'],
- true
- );
- }
- // End of replacing Rich Text package.
  $assets_file = $email_editor_assets_path . 'style.asset.php';
  if ( ! file_exists( $assets_file ) ) {
  $this->logger->error( 'Email editor assets file does not exist.', array( 'path' => $assets_file ) );
@@ -116,6 +99,7 @@ class Assets_Manager {
  'listings' => admin_url( 'admin.php?page=wc-settings&tab=email' ),
  'send' => admin_url( 'admin.php?page=wc-settings&tab=email' ),
  'back' => admin_url( 'admin.php?page=wc-settings&tab=email' ),
+ 'createCoupon' => admin_url( 'post-new.php?post_type=shop_coupon' ),
  ),
  );
  wp_localize_script(

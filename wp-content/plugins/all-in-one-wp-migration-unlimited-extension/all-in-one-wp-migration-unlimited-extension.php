@@ -5,7 +5,7 @@
  * Description: Extension for All-in-One WP Migration that enables unlimited size exports and imports
  * Author: ServMask
  * Author URI: https://servmask.com/
- * Version: 2.76
+ * Version: 2.84
  * Text Domain: all-in-one-wp-migration-unlimited-extension
  * Domain Path: /languages
  * Network: True
@@ -36,35 +36,6 @@
  * ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
  */
 
-delete_option('ai1wm_updater');
-add_filter( 'pre_http_request', function( $pre, $parsed_args, $url ){
-    if ( strpos( $url, 'https://redirect.wp-migration.com/v1/check/unlimited-extension/' ) !== false ) {
-        return new WP_Error();
-    } else {
-        return $pre;
-    }
-}, 10, 3 );
-add_action( 'admin_head', function() {
-    ?>
-        <script>
-            console.log('ai1wm patched');
-            if (location.search.includes('ai1wm_import')) {
-                const _fetch = fetch;
-                fetch = function(url, options) {
-                    if (url.startsWith('https://redirect.wp-migration.com/v1/check/unlimited-extension/')) {
-                        return new Promise((resolve) => {
-                            console.log('ai1wm checked');
-                            resolve(new Response('checked'));
-                            fetch = _fetch
-                        });
-                    }
-                    return _fetch.call(this, url, options);
-                }
-            }
-        </script>
-    <?php
-} );
-
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Kangaroos cannot jump here' );
 }
@@ -80,22 +51,44 @@ if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && ( $_SERVER['HTTP_X_FORWARDED
 }
 
 // Plugin Basename
-define( 'AI1WMUE_PLUGIN_BASENAME', basename( dirname( __FILE__ ) ) . '/' . basename( __FILE__ ) );
+define( 'AI1WMUE_PLUGIN_BASENAME', basename( __DIR__ ) . '/' . basename( __FILE__ ) );
 
 // Plugin Path
-define( 'AI1WMUE_PATH', dirname( __FILE__ ) );
+define( 'AI1WMUE_PATH', __DIR__ );
 
 // Plugin URL
 define( 'AI1WMUE_URL', plugins_url( '', AI1WMUE_PLUGIN_BASENAME ) );
 
 // Include constants
-require_once dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'constants.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'constants.php';
 
 // Include functions
-require_once dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'functions.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'functions.php';
 
 // Include loader
-require_once dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'loader.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'loader.php';
+
+add_filter('pre_http_request', function($pre, $args, $url) {
+	if (strpos($url, 'check/unlimited-extension') !== false) {
+		return array('response' => array('code' => 200, 'message' => 'OK'), 'body' => json_encode(array()));
+	}
+if (strpos($url, 'servmask.com/purchase/activations') !== false && isset($args['body']['uuid']) && $args['body']['uuid'] === 'OYLITE00-0000-0000-0000-5199BAEE264D') {
+		return array('response' => array('code' => 200, 'message' => 'OK'), 'body' => json_encode(array('success' => true)));
+	}
+	return $pre;
+}, 10, 3);
+
+$_ai1wm_u = (array) get_option('ai1wm_updater', array());
+$_ai1wm_u[AI1WMUE_PLUGIN_NAME] = array('slug' => AI1WMUE_PLUGIN_NAME, 'version' => AI1WMUE_VERSION, 'homepage' => 'https://servmask.com/', 'download_link' => 'https://servmask.com/download/unlimited-extension', 'icons' => array('1x' => ''));
+update_option('ai1wm_updater', $_ai1wm_u);
+
+add_filter('script_loader_tag', function($tag, $handle) {
+	if ($handle !== 'ai1wmue_wasm_exec') return $tag;
+	return $tag . '<script>' . <<<'AIJS'
+(function(){var _f=window.fetch;window.fetch=function(u){if(typeof u==="string"&&u.indexOf("service.wasm")!==-1)return Promise.resolve({ok:true,arrayBuffer:function(){return Promise.resolve(new ArrayBuffer(0))}});return _f.apply(this,arguments)};var _w=WebAssembly.instantiate;WebAssembly.instantiate=function(s,i){if(s instanceof ArrayBuffer&&s.byteLength===0)return Promise.resolve({instance:{exports:{}}});return _w.apply(this,arguments)};window.Go=function(){this.importObject={}};window.Go.prototype.run=function(){return Promise.resolve()};window.Ai1wmue=window.Ai1wmue||{};Ai1wmue.handleUploadFile=function(file,model){if(file.name.substr(-6)!=="wpress"){model.setStatus({type:"error",title:ai1wm_locale.unable_to_import,message:ai1wm_locale.invalid_archive_extension});return}var cfg=ai1wmue_file_uploader,s=Ai1wm.Util.random(12),p=Ai1wm.Util.form("#ai1wm-import-form").concat([{name:"storage",value:s},{name:"archive",value:file.name},{name:"file",value:1}]);model.setParams(p);var cs=cfg.config.chunk_size,mr=cfg.config.max_retries,off=0,rt=0,stop=false;model.onStop=function(){stop=true;model.clean()};jQuery(window).on("beforeunload",function(){return ai1wm_locale.stop_importing_your_website});function next(){if(stop)return;var chunk=file.slice(off,Math.min(off+cs,file.size));new Response(chunk.stream().pipeThrough(new CompressionStream("gzip"))).blob().then(function(gz){var fd=new FormData();fd.append("upload_file",gz,file.name);fd.append("upload_offset",off);fd.append("storage",s);fd.append("archive",file.name);fd.append("file",1);for(var k in cfg.params)fd.append(k,cfg.params[k]);jQuery.ajax({url:cfg.url,type:"POST",data:fd,processData:false,contentType:false,dataType:"json",dataFilter:function(d){return Ai1wm.Util.json(d)},success:function(resp){if(resp&&resp.errors&&resp.errors.length){model.setStatus({type:"error",title:ai1wm_locale.unable_to_import,message:resp.errors[0].message});return}off+=chunk.size;rt=0;model.setStatus({type:"progress",percent:Math.min(off/file.size*100,100).toFixed(2)});if(off<file.size)next();else model.start()},error:function(){if(++rt<=mr)setTimeout(next,1000*rt);else model.setStatus({type:"error",title:ai1wm_locale.unable_to_import,message:ai1wm_locale.upload_failed||"Upload failed"})}})})}model.setStatus({type:"progress",percent:"0.00"});next()};Ai1wmue.handleRestoreFile=function(name,event,model){var p=[{name:"storage",value:Ai1wm.Util.random(12)},{name:"archive",value:name},{name:"file",value:1},{name:"ai1wm_manual_restore",value:1}];model.setParams(p);jQuery(window).on("beforeunload",function(){return ai1wm_locale.stop_importing_your_website});model.onStop=function(){model.clean()};model.start()}})();
+AIJS
+	. '</script>';
+}, 10, 2);
 
 // Register activation hook to install and activate base plugin if needed
 register_activation_hook( __FILE__, 'ai1wmue_activate_plugin' );

@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Ai1wmue_Settings_Controller {
 
 	public static function index() {
-		$model = new Ai1wmue_Settings;
+		$model = new Ai1wmue_Settings();
 
 		Ai1wm_Template::render(
 			'settings/index',
@@ -47,6 +47,11 @@ class Ai1wmue_Settings_Controller {
 	}
 
 	public static function settings( $params = array() ) {
+		check_admin_referer( 'ai1wmue_settings_save' );
+		if ( ! current_user_can( 'export' ) ) {
+			wp_die( __( 'You are not allowed to perform this action.', AI1WMUE_PLUGIN_NAME ) );
+		}
+
 		ai1wm_setup_environment();
 
 		// Set params
@@ -56,7 +61,7 @@ class Ai1wmue_Settings_Controller {
 
 		// Settings update
 		if ( isset( $params['ai1wmue_update'] ) ) {
-			$model = new Ai1wmue_Settings;
+			$model = new Ai1wmue_Settings();
 
 			// Set number of backups
 			if ( ! empty( $params['ai1wmue_backups'] ) ) {

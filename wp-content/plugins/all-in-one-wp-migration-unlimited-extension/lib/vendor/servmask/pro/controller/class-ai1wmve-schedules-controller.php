@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2023 ServMask Inc.
+ * Copyright (C) 2014-2025 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Attribution: This code is part of the All-in-One WP Migration plugin, developed by
  *
  * ███████╗███████╗██████╗ ██╗   ██╗███╗   ███╗ █████╗ ███████╗██╗  ██╗
  * ██╔════╝██╔════╝██╔══██╗██║   ██║████╗ ████║██╔══██╗██╔════╝██║ ██╔╝
@@ -43,7 +45,7 @@ if ( ! class_exists( 'Ai1wmve_Schedules_Controller' ) ) {
 					$event  = $events->find_or_new( $event_id );
 
 					// List DB tables with default WP table prefix
-					$mysql = Ai1wm_Database_Utility::create_client();
+					$mysql = Ai1wm_Database_Utility::get_client();
 
 					// Include table prefixes
 					if ( ai1wm_table_prefix() ) {
@@ -57,7 +59,7 @@ if ( ! class_exists( 'Ai1wmve_Schedules_Controller' ) ) {
 					$exclude_tables = $mysql->get_tables();
 
 					// List db tables without WP default table prefix
-					$mysql = Ai1wm_Database_Utility::create_client();
+					$mysql = Ai1wm_Database_Utility::get_client();
 
 					// Exclude default wp table prefix
 					if ( ai1wm_table_prefix() ) {
@@ -214,7 +216,13 @@ if ( ! class_exists( 'Ai1wmve_Schedules_Controller' ) ) {
 		}
 
 		public static function save( $params = array() ) {
+			check_admin_referer( 'ai1wm_schedule_event_save' );
+			if ( ! current_user_can( 'export' ) ) {
+				wp_die( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) );
+			}
+
 			ai1wm_setup_environment();
+
 			// Set params
 			if ( empty( $params ) ) {
 				$params = stripslashes_deep( $_POST );
@@ -348,9 +356,8 @@ if ( ! class_exists( 'Ai1wmve_Schedules_Controller' ) ) {
 
 		public static function log_success( $params ) {
 			if ( isset( $params['event_id'] ) ) {
-				$event_id = $params['event_id'];
-				$events   = new Ai1wmve_Schedule_Events();
-				if ( $event = $events->find( $event_id ) ) {
+				$events = new Ai1wmve_Schedule_Events();
+				if ( $event = $events->find( $params['event_id'] ) ) {
 					$event->mark_success( $params );
 				}
 			}
@@ -358,9 +365,8 @@ if ( ! class_exists( 'Ai1wmve_Schedules_Controller' ) ) {
 
 		public static function log_running( $params ) {
 			if ( isset( $params['event_id'] ) ) {
-				$event_id = $params['event_id'];
-				$events   = new Ai1wmve_Schedule_Events();
-				if ( $event = $events->find( $event_id ) ) {
+				$events = new Ai1wmve_Schedule_Events();
+				if ( $event = $events->find( $params['event_id'] ) ) {
 					$event->mark_running( $params );
 				}
 			}
@@ -368,9 +374,8 @@ if ( ! class_exists( 'Ai1wmve_Schedules_Controller' ) ) {
 
 		public static function log_failed( $params, $exception ) {
 			if ( isset( $params['event_id'] ) ) {
-				$event_id = $params['event_id'];
-				$events   = new Ai1wmve_Schedule_Events();
-				if ( $event = $events->find( $event_id ) ) {
+				$events = new Ai1wmve_Schedule_Events();
+				if ( $event = $events->find( $params['event_id'] ) ) {
 					$message = $exception->getMessage();
 					if ( empty( $message ) ) {
 						$message = __( 'Unknown cron error', AI1WM_PLUGIN_NAME );

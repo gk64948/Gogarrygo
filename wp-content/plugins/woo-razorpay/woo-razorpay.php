@@ -3,8 +3,8 @@
  * Plugin Name: 1 Razorpay
  * Plugin URI: https://razorpay.com
  * Description: Razorpay Payment Gateway Integration for WooCommerce.Razorpay Welcome Back Offer: New to Razorpay? Sign up to enjoy FREE payments* of INR 2 lakh till March 31st! Transact before January 10th to grab the offer.
- * Version: 4.7.9
- * Stable tag: 4.7.9
+ * Version: 4.8.2
+ * Stable tag: 4.8.2
  * Author: Team Razorpay
  * WC tested up to: 10.3.4
  * Author URI: https://razorpay.com
@@ -216,8 +216,8 @@ function woocommerce_razorpay_init()
         const WC_ORDER_ID                    = 'woocommerce_order_id';
         const WC_ORDER_NUMBER                = 'woocommerce_order_number';
 
-        const DEFAULT_LABEL                  = 'Credit Card/Debit Card/NetBanking';
-        const DEFAULT_DESCRIPTION            = 'Pay securely by Credit or Debit card or Internet Banking through Razorpay.';
+        const DEFAULT_LABEL                  = 'UPI, Cards, NetBanking';
+        const DEFAULT_DESCRIPTION            = 'Pay securely via UPI, Credit/Debit Card, or Internet Banking through Razorpay.';
         const DEFAULT_SUCCESS_MESSAGE        = 'Thank you for shopping with us. Your account has been charged and your transaction is successful. We will be processing your order soon.';
 
         const PREPAY_COD_URL = '1cc/orders/cod/convert';
@@ -452,6 +452,41 @@ function woocommerce_razorpay_init()
 
             add_filter( 'woocommerce_thankyou_order_received_text', array($this, 'getCustomOrdercreationMessage'), 20, 2 );
         }
+        
+        private function getGeoBasedTitleAndDescription($key)
+        {
+            $dbValue = ($key === 'label')
+                ? $this->getSetting('title')
+                : (($key === 'description') ? $this->getSetting('description') : '');
+            
+            if (empty($dbValue) === false)
+            {
+                return $dbValue;
+            }
+            
+            $locBasedTitleDes = [
+                'US'    => ['label' => 'Cards', 'description' => 'Pay securely via Razorpay.'],
+                'MY'    => ['label' => 'Cards, FPX, Wallets', 'description' => 'Pay securely via Razorpay.'],
+                'SG'    => ['label' => 'Cards, ApplePay, PayNow, Wallets', 'description' => 'Pay securely via Razorpay.']
+            ];
+            
+            if (function_exists('wc_get_base_location'))
+            {
+                $baseLocation = wc_get_base_location();
+                $country = isset($baseLocation['country']) ? strtoupper($baseLocation['country']) : '';
+                if (isset($locBasedTitleDes[$country][$key]))
+                {
+                    return $locBasedTitleDes[$country][$key];
+                }
+            }
+			
+            // Fallback to class defaults
+            if ($key === 'label')
+            {
+                return static::DEFAULT_LABEL;
+            }
+            return static::DEFAULT_DESCRIPTION;
+        }
 
         public function init_form_fields()
         {
@@ -468,13 +503,13 @@ function woocommerce_razorpay_init()
                     'title' => __('Title', $this->id),
                     'type'=> 'text',
                     'description' => __('This controls the title which the user sees during checkout.', $this->id),
-                    'default' => __(static::DEFAULT_LABEL, $this->id)
+                    'default' => __($this->getGeoBasedTitleAndDescription('label'), $this->id)
                 ),
                 'description' => array(
                     'title' => __('Description', $this->id),
                     'type' => 'textarea',
                     'description' => __('This controls the description which the user sees during checkout.', $this->id),
-                    'default' => __(static::DEFAULT_DESCRIPTION, $this->id)
+                    'default' => __($this->getGeoBasedTitleAndDescription('description'), $this->id)
                 ),
                 'key_id' => array(
                     'title' => __('Key ID', $this->id),

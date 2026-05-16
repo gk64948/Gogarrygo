@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2023 ServMask Inc.
+ * Copyright (C) 2014-2025 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Attribution: This code is part of the All-in-One WP Migration plugin, developed by
  *
  * ███████╗███████╗██████╗ ██╗   ██╗███╗   ███╗ █████╗ ███████╗██╗  ██╗
  * ██╔════╝██╔════╝██╔══██╗██║   ██║████╗ ████║██╔══██╗██╔════╝██║ ██╔╝
@@ -30,6 +32,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Ai1wmve_Export_Controller' ) ) {
 
 	class Ai1wmve_Export_Controller {
+
+		public static function compression_types() {
+			Ai1wm_Template::render(
+				'export/compression-types',
+				array(),
+				AI1WMVE_TEMPLATES_PATH
+			);
+		}
 
 		public static function inactive_themes() {
 			Ai1wm_Template::render(
@@ -56,7 +66,7 @@ if ( ! class_exists( 'Ai1wmve_Export_Controller' ) ) {
 		}
 
 		public static function exclude_db_tables() {
-			$mysql = Ai1wm_Database_Utility::create_client();
+			$mysql = Ai1wm_Database_Utility::get_client();
 
 			// Include table prefixes
 			if ( ai1wm_table_prefix() ) {
@@ -76,7 +86,7 @@ if ( ! class_exists( 'Ai1wmve_Export_Controller' ) ) {
 		}
 
 		public static function include_db_tables() {
-			$mysql = Ai1wm_Database_Utility::create_client();
+			$mysql = Ai1wm_Database_Utility::get_client();
 
 			// Exclude default wp table prefix
 			if ( ai1wm_table_prefix() ) {

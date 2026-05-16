@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2023 ServMask Inc.
+ * Copyright (C) 2014-2025 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Attribution: This code is part of the All-in-One WP Migration plugin, developed by
  *
  * ███████╗███████╗██████╗ ██╗   ██╗███╗   ███╗ █████╗ ███████╗██╗  ██╗
  * ██╔════╝██╔════╝██╔══██╗██║   ██║████╗ ████║██╔══██╗██╔════╝██║ ██╔╝
@@ -91,6 +93,8 @@ if ( ! class_exists( 'Ai1wmve_Schedule_Event' ) ) {
 		protected $excluded_db_tables;
 
 		protected $included_db_tables;
+
+		protected $compression_type;
 
 		protected $password;
 
@@ -205,6 +209,7 @@ if ( ! class_exists( 'Ai1wmve_Schedule_Event' ) ) {
 				'excluded_files'     => $this->excluded_files,
 				'excluded_db_tables' => $this->excluded_db_tables,
 				'included_db_tables' => $this->included_db_tables,
+				'compression_type'   => $this->compression_type,
 				'password'           => $this->password(),
 				'incremental'        => $this->incremental,
 				'sites'              => array_map( 'intval', $this->sites ),
@@ -395,7 +400,6 @@ if ( ! class_exists( 'Ai1wmve_Schedule_Event' ) ) {
 		}
 
 		protected function notify_running( $params ) {
-
 		}
 
 		protected function notify_failed( $error ) {
@@ -493,6 +497,10 @@ if ( ! class_exists( 'Ai1wmve_Schedule_Event' ) ) {
 				$params['included_db_tables']           = $this->included_db_tables;
 			}
 
+			if ( ! empty( $this->compression_type ) ) {
+				$params['options']['compression_type'] = $this->compression_type;
+			}
+
 			if ( $this->incremental ) {
 				$params['incremental'] = 1;
 			}
@@ -516,11 +524,7 @@ if ( ! class_exists( 'Ai1wmve_Schedule_Event' ) ) {
 		 * @return string
 		 */
 		protected function archive( $blog_id = null ) {
-			return str_replace(
-				'.wpress',
-				sprintf( '-%s.wpress', $this->event_id ),
-				ai1wm_archive_file( $blog_id )
-			);
+			return str_replace( '.wpress', sprintf( '-%s.wpress', $this->event_id ), ai1wm_archive_file( $blog_id ) );
 		}
 	}
 }
